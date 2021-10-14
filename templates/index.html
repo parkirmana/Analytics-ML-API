@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Next-Parking</title>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div style="text-align: center;" class="mb-3">
+        <h2 style="text-align: center" class="mb-1">Next Parking</h2>
+        <small>Input parking place and image of the car here!</small>
+    </div>
+    
+    <div class="container-sm mb-3" style="width: 400px;">
+        <form action="/image" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="place" class="form-label">Place</label>
+                <input type="text" class="form-control" id="place" name="place" placeholder="where you parking..">
+            </div>
+            <div class="mb-3">
+                <label for="images" class="form-label">Image</label>
+                <input class="form-control" type="file" id="images" name="images">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

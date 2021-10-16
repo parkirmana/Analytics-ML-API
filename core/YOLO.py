@@ -4,7 +4,7 @@ import cv2
 import time
 import numpy as np
 
-yolov4_path="../saved_models/yolov4/"
+yolov4_path="saved_models/yolov4/"
 confthres=0.7
 nmsthres=0.1
 
@@ -15,26 +15,26 @@ class yolo_model:
         self.weights = self.get_weights(weights_path)
         self.nets = self.load_model(self.config, self.weights)
     
-    def get_labels(labels_path):
+    def get_labels(self, labels_path):
         # load the LPR object class labels our YOLOv4 model was trained on
         lpath=os.path.sep.join([yolov4_path, labels_path])
         LABELS = open(lpath).read().strip().split("\n")
 
         return LABELS
 
-    def get_weights(weights_path):
+    def get_weights(self, weights_path):
         # derive the paths to the YOLOv4 weights
         wpath = os.path.sep.join([yolov4_path, weights_path])
 
         return wpath
 
-    def get_config(config_path):
+    def get_config(self, config_path):
         # derive the paths to the YOLOv4 configuration
         cfg_path = os.path.sep.join([yolov4_path, config_path])
 
         return cfg_path
 
-    def load_model(cfg_path, weights_path):
+    def load_model(self, cfg_path, weights_path):
         # load YOLOv4 object detector
         print("[INFO] loading YOLO from disk...")
         net = cv2.dnn.readNetFromDarknet(cfg_path, weights_path)

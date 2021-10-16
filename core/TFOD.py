@@ -7,7 +7,7 @@ import numpy as np
 from object_detection.utils import label_map_util, config_util
 from object_detection.builders import model_builder
 
-tfod_path = "../saved_models/tfod/"
+tfod_path = "saved_models/tfod/"
 
 class tfod_model:
     def __init__(self, labels_path, config_path, ckpt_path):
@@ -16,24 +16,24 @@ class tfod_model:
         self.nets = self.load_model(self.configs)
         self.ckpt = self.get_ckpt(ckpt_path, self.nets)
     
-    def get_labels(labels_path):
+    def get_labels(self, labels_path):
         lpath = os.path.sep.join([tfod_path, labels_path])
         LABELS = label_map_util.create_category_index_from_labelmap(lpath)
 
         return LABELS
 
-    def get_config(config_path):
+    def get_config(self, config_path):
         cfg_path = os.path.join(tfod_path, config_path)
         CFG = config_util.get_configs_from_pipeline_file(cfg_path)
 
         return CFG
 
-    def load_model(configs):
+    def load_model(self, configs):
         detection_model = model_builder.build(model_config=configs['model'], is_training=False)
 
         return detection_model
 
-    def get_ckpt(ckpt_path, detection_model):
+    def get_ckpt(self, ckpt_path, detection_model):
         ckpt_path = os.path.join(tfod_path, ckpt_path)
         ckpt = tf.compat.v2.train.Checkpoint(model=detection_model)
         ckpt.restore(ckpt_path).expect_partial()

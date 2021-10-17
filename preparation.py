@@ -21,9 +21,9 @@ if __name__ == '__main__':
     for path in paths.values():
         if not os.path.exists(path):
             if os.name == 'posix':
-                os.system('mkdir -p {path}')
+                os.system('mkdir -p {}'.format(path))
             if os.name == 'nt':
-                os.system('mkdir {path}')
+                os.system('mkdir {}'.format(path))
     
     if os.name=='nt':
         os.system('pip install wget')

@@ -21,26 +21,26 @@ if __name__ == '__main__':
     for path in paths.values():
         if not os.path.exists(path):
             if os.name == 'posix':
-                !mkdir -p {path}
+                os.system('mkdir -p {path}')
             if os.name == 'nt':
-                !mkdir {path}
+                os.system('mkdir {path}')
     
     if os.name=='nt':
-        !pip install wget
+        os.system('pip install wget')
         import wget
     
     if not os.path.exists(os.path.join(paths['APIMODEL_PATH'], 'research', 'object_detection')):
-        !git clone https://github.com/tensorflow/models {paths['APIMODEL_PATH']}
+        os.system("git clone https://github.com/tensorflow/models {paths['APIMODEL_PATH']}")
     
     if os.name=='posix':  
-        !apt-get install protobuf-compiler
-        !cd saved_models/tfod/models/research && protoc object_detection/protos/*.proto --python_out=. && cp object_detection/packages/tf2/setup.py . && python -m pip install . 
+        os.system('apt-get install protobuf-compiler')
+        os.system('cd saved_models/tfod/models/research && protoc object_detection/protos/*.proto --python_out=. && cp object_detection/packages/tf2/setup.py . && python -m pip install .')
 
     if os.name=='nt':
         url="https://github.com/protocolbuffers/protobuf/releases/download/v3.15.6/protoc-3.15.6-win64.zip"
         wget.download(url)
-        !move protoc-3.15.6-win64.zip {paths['PROTOC_PATH']}
-        !cd {paths['PROTOC_PATH']} && tar -xf protoc-3.15.6-win64.zip
+        os.system("move protoc-3.15.6-win64.zip {paths['PROTOC_PATH']}")
+        os.system("cd {paths['PROTOC_PATH']} && tar -xf protoc-3.15.6-win64.zip")
         os.environ['PATH'] += os.pathsep + os.path.abspath(os.path.join(paths['PROTOC_PATH'], 'bin'))   
-        !cd saved_models/tfod/models/research && protoc object_detection/protos/*.proto --python_out=. && copy object_detection\\packages\\tf2\\setup.py setup.py && python setup.py build && python setup.py install
-        !cd saved_models/tfod/models/research/slim && pip install -e .
+        os.system('cd saved_models/tfod/models/research && protoc object_detection/protos/*.proto --python_out=. && copy object_detection\\packages\\tf2\\setup.py setup.py && python setup.py build && python setup.py install')
+        os.system('cd saved_models/tfod/models/research/slim && pip install -e .')

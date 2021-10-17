@@ -13,7 +13,7 @@ class tfod_model:
     def __init__(self, labels_path, config_path, ckpt_path):
         self.labels = self.get_labels(labels_path)
         self.config = self.get_config(config_path)
-        self.nets = self.load_model(self.configs)
+        self.nets = self.load_model(self.config)
         self.ckpt = self.get_ckpt(ckpt_path, self.nets)
     
     def get_labels(self, labels_path):
@@ -48,8 +48,7 @@ class tfod_model:
 
         return detections
 
-    def get_digits_lpr(self, image):
-        detections = self.detect(image)
+    def get_digits_lpr(self, detections):
         num_detections = int(detections.pop('num_detections'))
         detections = {key: value[0, :num_detections].numpy()
                       for key, value in detections.items()}

@@ -45,9 +45,9 @@ yolo_weights_path = "yolov4-plate-detector_best.weights"
 obj_detection = yolo_model(yolo_labels_path, yolo_cfg_path, yolo_weights_path)
 
 # Load TFOD model
-tfod_labels_path = "label_map.pbtxt"
-tfod_cfg_path = "pipeline.config"
-tfod_ckpt_path = "ckpt-6"
+tfod_labels_path = "workspace/annotations/label_map.pbtxt"
+tfod_cfg_path = "workspace/models/efficientdet_d1_coco17/pipeline.config"
+tfod_ckpt_path = "workspace/models/efficientdet_d1_coco17/ckpt-6"
 digits_detection = tfod_model(tfod_labels_path, tfod_cfg_path, tfod_ckpt_path)
 
 # API that returns image with detections on it
@@ -68,11 +68,11 @@ def get_image():
         IMAGE_CROPPED = obj_detection.detect(img)
 
         # Detect digit license plate
-        img = cv2.imread(IMAGE_CROPPED)
-        image_np = np.array(img)
+        image_np = np.array(IMAGE_CROPPED)
 
         input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
-        digit_plate = digits_detection.get_digits_lpr(input_tensor)
+        detections = digits_detection.detect(input_tensor)
+        digit_plate = digits_detection.get_digits_lpr(detections)
 
         # Filter query to database
         vehicle = db.session.query(Vehicle).filter_by(plate_number=digit_plate).scalar()

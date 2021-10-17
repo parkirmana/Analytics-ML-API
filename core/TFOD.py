@@ -7,7 +7,7 @@ import numpy as np
 from object_detection.utils import label_map_util, config_util
 from object_detection.builders import model_builder
 
-tfod_path = "saved_models/tfod/"
+tfod_path = "saved_models/tfod"
 
 class tfod_model:
     def __init__(self, labels_path, config_path, ckpt_path):

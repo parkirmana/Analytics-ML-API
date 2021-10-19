@@ -6,7 +6,7 @@
 
 {% block body %}
 <div class="content" style="align-content: center;">
-    <div class="card" style="width: 400px; margin-left: auto; margin-right: auto;">
+    <div class="card" style="width: 500px; margin-left: auto; margin-right: auto;">
         <div class="card-body" style="width: 100%;">
             <div style="text-align: center;" class="mb-3">
                 <h3 class="mb-1">Transaction Detail</h2>
@@ -17,7 +17,7 @@
                         <b>ID</b>
                     </div>
                     <div class="col">
-                        {{ data.id_transaction }}
+                        {{ data.id_parking }}
                     </div>
                 </div>
                 <div class="row mb-2">
@@ -41,7 +41,7 @@
                         <b>Time Enter</b>
                     </div>
                     <div class="col">
-                        {{ data.time_enter }}
+                        {{ data.time_in }}
                     </div>
                 </div>
                 <div class="row mb-2">
@@ -50,14 +50,6 @@
                     </div>
                     <div class="col">
                         {{ data.time_out }}
-                    </div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col">
-                        <b>Total Price</b>
-                    </div>
-                    <div class="col">
-                        {{ data.price }}
                     </div>
                 </div>
             </div>

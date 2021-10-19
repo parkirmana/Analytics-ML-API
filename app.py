@@ -1,6 +1,7 @@
 import os
 import datetime
-from math import ceil, floor
+import pytz
+from math import floor
 
 import cv2
 import numpy as np
@@ -8,7 +9,6 @@ import tensorflow as tf
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
-from core.utils import *
 # Import YOLO
 from core.YOLO import yolo_model
 # Import TFOD
@@ -23,10 +23,6 @@ import json
 
 # Initialize Flask application
 app = Flask(__name__)
-
-# Parking price per hours
-LOW_PRICE = 3000
-HIGH_PRICE = 5000
 
 # Database configuration
 from core.db_config import DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_NAME
@@ -58,8 +54,8 @@ def get_image():
         # Unpack request
         image = request.files["images"]
         IMAGE_REQUEST = image.filename
-        image.save(os.path.join(os.getcwd(), 'detections', 'tmp', IMAGE_REQUEST))
-        IMAGE_PATH = os.path.join(os.getcwd(), 'detections', 'tmp', IMAGE_REQUEST)
+        image.save(os.path.join(os.getcwd(), 'detections', IMAGE_REQUEST))
+        IMAGE_PATH = os.path.join(os.getcwd(), 'detections', IMAGE_REQUEST)
         place = dict(request.form)["place"]
 
         # Detect license plate object
@@ -80,24 +76,70 @@ def get_image():
         # Check is there user with plate number = digit_plate
         if (vehicle is not None):
             # Check whether user has booked parking slot
-            booking = db.session.query(Booking).filter_by(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle).scalar()
+            booking = db.session.query(Booking).filter_by(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle, status='BOOKED').scalar()
             # BOOKED
-            if (booking.status == 'BOOOKED'):
+            if (booking is not None):
                 booking.status = 'DONE'
                 db.session.commit()
 
             parking_place = db.session.query(Place).filter_by(name=place).scalar()
-            transaction = db.session.query(Transaction).filter_by(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle, id_place=parking_place.id_place).scalar()
+            transaction = db.session.query(Transaction).filter_by(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle, id_place=parking_place.id_place, is_done=False).scalar()
             
             # Check whether IN or OUT
             # OUT
-            if (transaction is not None) and not(transaction.is_done):
+            if (transaction is not None):
                 try:
                     # Update time_out in transaction
-                    update_timeout_transaction(transaction)
+                    time_out = datetime.datetime.now(pytz.UTC)
+                    transaction.time_out = time_out
+                    transaction.is_done = True
+                    db.session.commit()
 
                     # Generate notification and response data
-                    notif_data, data = gen_responses(transaction, vehicle, place, digit_plate, out=True)
+                    time_in = transaction.time_in
+                    time_out = transaction.time_out
+                    time_diff = (time_out - time_in).total_seconds()
+                    print(time_diff)
+
+                    hours = floor(time_diff/3600)
+                    minutes = floor((time_diff%3600)/60)
+                    seconds = floor(time_diff%60)
+                    print(hours, minutes, seconds)
+
+                    # Query select device_token
+                    device_token = db.session.query(User.device_token).filter_by(id_user=vehicle.id_user).scalar()
+                    print(device_token)
+
+                    # Notification data to android
+                    notif_data = json.dumps({
+                        "to" : "{}".format(device_token),
+                        "data" : {
+                        "body": "Please pay the parking fare!",
+                        "title":"You are going out",
+                        "timein": str(time_in),
+                        "timeout": str(time_out),
+                        "totaltime": "{}h {}m {}s".format(hours, minutes, seconds),
+                        "location": place
+                        },
+                        "notification": {
+                        "body": "Please pay the parking fare!",
+                        "title": "You are going out",
+                        "click_action": "com.dicoding.nextparking.ui.payment.PaymentActivity"
+                        }
+                    })
+                    print(notif_data)
+
+                    # Response data
+                    data = {
+                        "response": "update transaction succeeded",
+                        "id_user": transaction.id_user,
+                        "id_parking": transaction.id_parking,
+                        "plate_number": digit_plate,
+                        "place": place,
+                        "time_in": str(time_in),
+                        "time_out": str(time_out),
+                    }
+                    print(data)
 
                     send_notification(notif_data)
 
@@ -111,7 +153,7 @@ def get_image():
                         "id_parking": transaction.id_parking,
                         "plate_number": digit_plate,
                         "place": place,
-                        "time_enter": time_in.strftime("%H:%M:%S"),
+                        "time_in": time_in.strftime("%H:%M:%S"),
                     }
                     print("update transaction failed")
                     return render_template('parking.html', data=data)
@@ -122,10 +164,45 @@ def get_image():
             else:
                 try:
                     # Add new transaction
-                    add_new_transaction(vehicle, parking_place)
+                    t = datetime.datetime.now(pytz.UTC)
+                    new_transaction = Transaction(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle, id_place=parking_place.id_place, time_in=t)
+                    db.session.add(new_transaction)
+                    db.session.commit()
 
                     # Generate notification and response data
-                    notif_data, data = gen_responses(transaction, vehicle, place, digit_plate, out=False)
+                    time_in = new_transaction.time_in
+
+                    # Query select device_token
+                    device_token = db.session.query(User.device_token).filter_by(id_user=vehicle.id_user).scalar()
+
+                    # Sent post to android
+                    notif_data = json.dumps({
+                        "to" : "{}".format(device_token),
+                        "data" : {
+                        "body": "You are entering {} parking lot!".format(place),
+                        "title":"You are going in",
+                        "timein": str(time_in),
+                        "location": place
+                        },
+                        "notification": {
+                        "body": "You are entering {} parking lot!".format(place),
+                        "title":"You are going in",
+                        "click_action": "com.dicoding.nextparking.HomeActivity"
+                        }
+                    })
+                    print(notif_data)
+
+                    # Response data
+                    data = {
+                        "response": "add new transaction record succeed",            
+                        "id_user": new_transaction.id_user,
+                        "id_parking": new_transaction.id_parking,
+                        "plate_number": digit_plate,
+                        "place": place,
+                        "time_in": str(time_in),
+                        "time_out": str(new_transaction.time_out),
+                    }
+                    print(data)
 
                     send_notification(notif_data)
 

@@ -8,6 +8,7 @@ import tensorflow as tf
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as viz_utils
+from core.utils import *
 # Import YOLO
 from core.YOLO import yolo_model
 # Import TFOD
@@ -61,8 +62,6 @@ def get_image():
         IMAGE_PATH = os.path.join(os.getcwd(), 'detections', 'tmp', IMAGE_REQUEST)
         place = dict(request.form)["place"]
 
-        # category_index = label_map_util.create_category_index_from_labelmap('./Tensorflow/annotations/label_map.pbtxt')
-
         # Detect license plate object
         img = cv2.imread(IMAGE_PATH)
         IMAGE_CROPPED = obj_detection.detect(img)
@@ -73,10 +72,10 @@ def get_image():
         input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
         detections = digits_detection.detect(input_tensor)
         digit_plate = digits_detection.get_digits_lpr(detections)
+        # digit_plate = 'AE1941E'
 
         # Filter query to database
-        vehicle = db.session.query(Vehicle).filter_by(plate_number=digit_plate).scalar()
-        # transaction = db.session.query(Transaction).filter_by(plate_number=digit_plate, place=place, isDone=False).scalar()
+        vehicle = db.session.query(Vehicle).filter_by(plat_number=digit_plate).scalar()
 
         # Check is there user with plate number = digit_plate
         if (vehicle is not None):
@@ -92,62 +91,24 @@ def get_image():
             
             # Check whether IN or OUT
             # OUT
-            if (transaction is not None) and (transaction.is_done):
+            if (transaction is not None) and not(transaction.is_done):
                 try:
                     # Update time_out in transaction
-                    transaction.time_out = datetime.datetime.now().time()
-                    db.session.commit()
+                    update_timeout_transaction(transaction)
 
-                    time_in = datetime.datetime.combine(datetime.date.today(), transaction.time_in)
-                    time_out = datetime.datetime.combine(datetime.date.today(), transaction.time_out)
-                    time_diff = (time_out - time_in).total_seconds()
-
-                    time_in = transaction.time_in
-                    time_out = transaction.time_out
-                    hours = floor(time_diff/3600)
-                    minutes = floor((time_diff%3600)/60)
-                    seconds = floor(time_diff%60)
-
-                    # Query select device_token
-                    device_token = db.session.query(User.device_token).filter_by(id_user=vehicle.id_user).scalar()
-
-                    # Sent post to android
-                    notif_data = json.dumps({
-                        "to" : "{}".format(device_token),
-                        "data" : {
-                        "body": "Please pay the parking fare!",
-                        "title":"You are going out",
-                        "timein": time_in.strftime("%H:%M:%S"),
-                        "timeout": time_out.strftime("%H:%M:%S"),
-                        "totaltime": "{}h {}m {}s".format(hours, minutes, seconds),
-                        "location": parking_place.name
-                        },
-                        "notification": {
-                        "body": "Please pay the parking fare!",
-                        "title": "You are going out",
-                        "click_action": "com.dicoding.nextparking.ui.payment.PaymentActivity"
-                        }
-                    })
+                    # Generate notification and response data
+                    notif_data, data = gen_responses(transaction, vehicle, place, digit_plate, out=True)
 
                     send_notification(notif_data)
-
-                    data = {
-                        "response": "update transaction succeeded",
-                        "id_user": transaction.id_user,
-                        "id_transaction": transaction.id_transaction,
-                        "plate_number": digit_plate,
-                        "place": place,
-                        "time_enter": time_in.strftime("%H:%M:%S"),
-                        "time_out": time_out.strftime("%H:%M:%S"),
-                    }
 
                     print("update transaction succeeded")
                     return render_template('parking.html', data=data)
                 except:
+                    time_in = transaction.time_in
                     data = {
                         "response": "update transaction failed",
                         "id_user": transaction.id_user,
-                        "id_transaction": transaction.id_transaction,
+                        "id_parking": transaction.id_parking,
                         "plate_number": digit_plate,
                         "place": place,
                         "time_enter": time_in.strftime("%H:%M:%S"),
@@ -156,47 +117,18 @@ def get_image():
                     return render_template('parking.html', data=data)
             
             # IN
-            elif (transaction is not None):
+            # Case 1 : the user has made a transaction before (there is transaction record with is_done = True)
+            # Case 2 : the user has never made a transaction before (transaction is None)
+            else:
                 try:
                     # Add new transaction
-                    print(datetime.datetime.now().time())
-                    new_transaction = Transaction(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle, id_place=parking_place.id_place, time_in=datetime.datetime.now().time())
-                    db.session.add(new_transaction)
-                    db.session.commit()
+                    add_new_transaction(vehicle, parking_place)
 
-                    time_in = new_transaction.time_in
-
-                    # Query select device_token
-                    device_token = db.session.query(User.device_token).filter_by(id_user=vehicle.id_user).scalar()
-
-                    # Sent post to android
-                    notif_data = json.dumps({
-                        "to" : "{}".format(device_token),
-                        "data" : {
-                        "body": "You are entering {} parking lot!".format(place),
-                        "title":"You are going in",
-                        "timein": time_in.strftime("%H:%M:%S"),
-                        "location": place
-                        },
-                        "notification": {
-                        "body": "You are entering {} parking lot!".format(place),
-                        "title":"You are going in",
-                        "click_action": "com.dicoding.nextparking.HomeActivity"
-                        }
-                    })
+                    # Generate notification and response data
+                    notif_data, data = gen_responses(transaction, vehicle, place, digit_plate, out=False)
 
                     send_notification(notif_data)
 
-                    data = {
-                        "response": "add new transaction record succeed",            
-                        "id_user": new_transaction.id_user,
-                        "id_transaction": new_transaction.id_transaction,
-                        "plate_number": new_transaction.plate_number,
-                        "place": new_transaction.place,
-                        "time_enter": time_in.strftime("%H:%M:%S"),
-                        "time_out": str(new_transaction.time_out),
-                        "price": str(new_transaction.price)
-                    }
                     print("Add new record succeded")
                     return render_template('parking.html', data=data)
                 except:
@@ -221,4 +153,4 @@ def get_image():
         return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)

@@ -76,136 +76,139 @@ def get_image():
 
         # Filter query to database
         vehicle = db.session.query(Vehicle).filter_by(plate_number=digit_plate).scalar()
-        transaction = db.session.query(Transaction).filter_by(plate_number=digit_plate, place=place, isDone=False).scalar()
+        # transaction = db.session.query(Transaction).filter_by(plate_number=digit_plate, place=place, isDone=False).scalar()
 
-        # If user with plate_number <digit_plate> parking at <place> --> want to quit parking lot
-        if (vehicle is not None) and (transaction is not None):
-            try:
-                # Add time_out
-                transaction.time_out = datetime.datetime.now().time()
+        # Check is there user with plate number = digit_plate
+        if (vehicle is not None):
+            # Check whether user has booked parking slot
+            booking = db.session.query(Booking).filter_by(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle).scalar()
+            # BOOKED
+            if (booking.status == 'BOOOKED'):
+                booking.status = 'DONE'
                 db.session.commit()
 
-                # Add parking fee
-                time_enter = datetime.datetime.combine(datetime.date.today(), transaction.time_enter)
-                time_out = datetime.datetime.combine(datetime.date.today(), transaction.time_out)
-                time_diff = (time_out - time_enter).total_seconds()
-                time_diff_in_hours = time_diff/3600
-                if time_diff_in_hours < 1:
-                    transaction.price = LOW_PRICE
-                else:
-                    transaction.price = ceil(time_diff_in_hours) * HIGH_PRICE
-                db.session.commit()
+            parking_place = db.session.query(Place).filter_by(name=place).scalar()
+            transaction = db.session.query(Transaction).filter_by(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle, id_place=parking_place.id_place).scalar()
+            
+            # Check whether IN or OUT
+            # OUT
+            if (transaction is not None) and (transaction.is_done):
+                try:
+                    # Update time_out in transaction
+                    transaction.time_out = datetime.datetime.now().time()
+                    db.session.commit()
 
-                time_enter = transaction.time_enter
-                time_out = transaction.time_out
-                price = transaction.price
-                hours = floor(time_diff/3600)
-                minutes = floor((time_diff%3600)/60)
-                seconds = floor(time_diff%60)
+                    time_in = datetime.datetime.combine(datetime.date.today(), transaction.time_in)
+                    time_out = datetime.datetime.combine(datetime.date.today(), transaction.time_out)
+                    time_diff = (time_out - time_in).total_seconds()
 
-                # Query select device_token
-                device_token = db.session.query(Device.device_token).filter_by(id_user=vehicle.id_user).scalar()
+                    time_in = transaction.time_in
+                    time_out = transaction.time_out
+                    hours = floor(time_diff/3600)
+                    minutes = floor((time_diff%3600)/60)
+                    seconds = floor(time_diff%60)
 
-                # Sent post to android
-                notif_data = json.dumps({
-                    "to" : "{}".format(device_token),
-                    "data" : {
-                    "body": "Please pay the parking fare!",
-                    "title":"You are going out",
-                    "timein": time_enter.strftime("%H:%M:%S"),
-                    "timeout": time_out.strftime("%H:%M:%S"),
-                    "totaltime": "{}h {}m {}s".format(hours, minutes, seconds),
-                    "fare": "{}".format(price),
-                    "location": place
-                    },
-                    "notification": {
-                    "body": "Please pay the parking fare!",
-                    "title": "You are going out",
-                    "click_action": "com.dicoding.nextparking.ui.payment.PaymentActivity"
+                    # Query select device_token
+                    device_token = db.session.query(User.device_token).filter_by(id_user=vehicle.id_user).scalar()
+
+                    # Sent post to android
+                    notif_data = json.dumps({
+                        "to" : "{}".format(device_token),
+                        "data" : {
+                        "body": "Please pay the parking fare!",
+                        "title":"You are going out",
+                        "timein": time_in.strftime("%H:%M:%S"),
+                        "timeout": time_out.strftime("%H:%M:%S"),
+                        "totaltime": "{}h {}m {}s".format(hours, minutes, seconds),
+                        "location": parking_place.name
+                        },
+                        "notification": {
+                        "body": "Please pay the parking fare!",
+                        "title": "You are going out",
+                        "click_action": "com.dicoding.nextparking.ui.payment.PaymentActivity"
+                        }
+                    })
+
+                    send_notification(notif_data)
+
+                    data = {
+                        "response": "update transaction succeeded",
+                        "id_user": transaction.id_user,
+                        "id_transaction": transaction.id_transaction,
+                        "plate_number": digit_plate,
+                        "place": place,
+                        "time_enter": time_in.strftime("%H:%M:%S"),
+                        "time_out": time_out.strftime("%H:%M:%S"),
                     }
-                })
 
-                send_notification(notif_data)
-
-                data = {
-                    "response": "update transaction succeeded",
-                    "id_user": transaction.id_user,
-                    "id_transaction": transaction.id_transaction,
-                    "plate_number": transaction.plate_number,
-                    "place": transaction.place,
-                    "time_enter": time_enter.strftime("%H:%M:%S"),
-                    "time_out": time_out.strftime("%H:%M:%S"),
-                    "price": str(transaction.price)
-                }
-
-                print("update transaction succeeded")
-                return render_template('parking.html', data=data)
-            except:
-                data = {
-                    "response": "update transaction failed",
-                    "id_user": transaction.id_user,
-                    "id_transaction": transaction.id_transaction,
-                    "plate_number": transaction.plate_number,
-                    "place": transaction.place,
-                    "time_enter": time_enter.strftime("%H:%M:%S"),
-                }
-                print("update transaction failed")
-                return render_template('parking.html', data=data)
-
-        # If user with plate_number <digit_plate> is exist and want to parking at <place>
-        elif (vehicle is not None):
-            try:
-                # Add new transaction
-                print(datetime.datetime.now().time())
-                new_transaction = Transaction(id_user=vehicle.id_user, plate_number=vehicle.plate_number, place=place, time_enter=datetime.datetime.now().time())
-                db.session.add(new_transaction)
-                db.session.commit()
-
-                time_enter = new_transaction.time_enter
-
-                # Query select device_token
-                device_token = db.session.query(Device.device_token).filter_by(id_user=vehicle.id_user).scalar()
-
-                # Sent post to android
-                notif_data = json.dumps({
-                    "to" : "{}".format(device_token),
-                    "data" : {
-                    "body": "You are entering {} parking lot!".format(place),
-                    "title":"You are going in",
-                    "timein": time_enter.strftime("%H:%M:%S"),
-                    "location": place
-                    },
-                    "notification": {
-                    "body": "You are entering {} parking lot!".format(place),
-                    "title":"You are going in",
-                    "click_action": "com.dicoding.nextparking.HomeActivity"
+                    print("update transaction succeeded")
+                    return render_template('parking.html', data=data)
+                except:
+                    data = {
+                        "response": "update transaction failed",
+                        "id_user": transaction.id_user,
+                        "id_transaction": transaction.id_transaction,
+                        "plate_number": digit_plate,
+                        "place": place,
+                        "time_enter": time_in.strftime("%H:%M:%S"),
                     }
-                })
+                    print("update transaction failed")
+                    return render_template('parking.html', data=data)
+            
+            # IN
+            elif (transaction is not None):
+                try:
+                    # Add new transaction
+                    print(datetime.datetime.now().time())
+                    new_transaction = Transaction(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle, id_place=parking_place.id_place, time_in=datetime.datetime.now().time())
+                    db.session.add(new_transaction)
+                    db.session.commit()
 
-                send_notification(notif_data)
+                    time_in = new_transaction.time_in
 
-                data = {
-                    "response": "add new transaction record succeed",            
-                    "id_user": new_transaction.id_user,
-                    "id_transaction": new_transaction.id_transaction,
-                    "plate_number": new_transaction.plate_number,
-                    "place": new_transaction.place,
-                    "time_enter": time_enter.strftime("%H:%M:%S"),
-                    "time_out": str(new_transaction.time_out),
-                    "price": str(new_transaction.price)
-                }
-                print("Add new record succeded")
-                return render_template('parking.html', data=data)
-            except:
-                data = {
-                    "response": "add new transaction record failed",
-                    "id_user": vehicle.id_user,
-                    "plate_number": digit_plate
-                }
-                print("add new transaction record failed")
-                return render_template('parking.html', data=data)
+                    # Query select device_token
+                    device_token = db.session.query(User.device_token).filter_by(id_user=vehicle.id_user).scalar()
 
-        # If user not found
+                    # Sent post to android
+                    notif_data = json.dumps({
+                        "to" : "{}".format(device_token),
+                        "data" : {
+                        "body": "You are entering {} parking lot!".format(place),
+                        "title":"You are going in",
+                        "timein": time_in.strftime("%H:%M:%S"),
+                        "location": place
+                        },
+                        "notification": {
+                        "body": "You are entering {} parking lot!".format(place),
+                        "title":"You are going in",
+                        "click_action": "com.dicoding.nextparking.HomeActivity"
+                        }
+                    })
+
+                    send_notification(notif_data)
+
+                    data = {
+                        "response": "add new transaction record succeed",            
+                        "id_user": new_transaction.id_user,
+                        "id_transaction": new_transaction.id_transaction,
+                        "plate_number": new_transaction.plate_number,
+                        "place": new_transaction.place,
+                        "time_enter": time_in.strftime("%H:%M:%S"),
+                        "time_out": str(new_transaction.time_out),
+                        "price": str(new_transaction.price)
+                    }
+                    print("Add new record succeded")
+                    return render_template('parking.html', data=data)
+                except:
+                    data = {
+                        "response": "add new transaction record failed",
+                        "id_user": vehicle.id_user,
+                        "plate_number": digit_plate
+                    }
+                    print("add new transaction record failed")
+                    return render_template('parking.html', data=data)
+
+        # User not found
         else:
             data = {
                 "response": "user not found",
@@ -213,6 +216,7 @@ def get_image():
             }
             print("user not found")
             return render_template('parking.html', data=data)
+
     else:
         return render_template('index.html')
 

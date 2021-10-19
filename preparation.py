@@ -4,6 +4,7 @@ import string
 CUSTOM_MODEL_NAME = 'efficientdet_d1_coco17'
 LABEL_MAP_NAME = 'label_map.pbtxt'
 paths = {
+    'YOLO_PATH': os.path.join('saved_models', 'yolov4'),
     'WORKSPACE_PATH': os.path.join('saved_models', 'tfod', 'workspace'),
     'APIMODEL_PATH': os.path.join('saved_models', 'tfod','models'),
     'ANNOTATION_PATH': os.path.join('saved_models', 'tfod', 'workspace','annotations'),
@@ -24,6 +25,8 @@ if __name__ == '__main__':
                 os.system('mkdir -p {}'.format(path))
             if os.name == 'nt':
                 os.system('mkdir {}'.format(path))
+    
+    # os.system('pip install -r requirements.txt')
     
     if os.name=='nt':
         os.system('pip install wget')

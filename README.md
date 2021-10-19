@@ -11,5 +11,5 @@ You'll find `config` and `checkpoint` file. Download both of them and put them i
 7. Download `label` file for efficientnet_d1 model [here](https://drive.google.com/drive/folders/1tbKOLc2srxj8PLlkUhVtzCOMyctH-E-7?usp=sharing).
 Download `label_map.pbtxt` file and put it inside directory `saved_models/tfod/workspace/annotations/`.
 9. Please update the database configuration in `core/db_config.py`.
-10. Please update the `host` and `port` to run the apllication in `app.py`.
+10. Please update the `host` and `port` to run the apllication in `app.py` (last line of code).
 11. Last, run `python app.py` to run application.

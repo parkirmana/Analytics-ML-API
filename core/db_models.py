@@ -65,7 +65,10 @@ class Place(db.Model):
     id_company = db.Column(db.Integer)
     name = db.Column(db.String(32))
     address = db.Column(db.String(64))
-    coordinate = db.Column(db.ARRAY(db.String(32)))
+    longitude = db.Column(db.String(16))
+    latitude = db.Column(db.String(16))
+    motor_capacity = db.Column(db.Integer)
+    car_capacity = db.Column(db.Integer)
 
     def __repr__(self) -> str:
         return '<Place -- id_place: {} id_company: {} name: {}>'.format(self.id_place, self.id_company, self.name)
@@ -76,14 +79,17 @@ class Place(db.Model):
             'id_company': self.id_company,
             'name': self.name,
             'address': self.address,
-            'coordinate': self.coordinate,
+            'longitude': self.longitude,
+            'latitude': self.latitude,
+            'motor_capacity': self.motor_capacity,
+            'car_capacity': self.car_capacity
         }
 
 class Transaction(db.Model):
     __tablename__ = 'uni_parking_transactions'
 
     id_user = db.Column(db.Integer)
-    id_transaction = db.Column(db.Integer, primary_key=True)
+    id_parking = db.Column(db.Integer, primary_key=True)
     id_vehicle = db.Column(db.Integer)
     id_place = db.Column(db.Integer)
     time_in = db.Column(db.DateTime(timezone=True))
@@ -98,12 +104,12 @@ class Transaction(db.Model):
         self.is_done = is_done
 
     def __repr__(self) -> str:
-        return '<Transactions -- id_user: {} id_transaction: {} time_in: {}>'.format(self.id_user, self.id_transaction, self.time_in)
+        return '<Transactions -- id_user: {} id_parking: {} time_in: {}>'.format(self.id_user, self.id_parking, self.time_in)
 
     def serialize(self):
         return {
             'id_user': self.id_user,
-            'id_transaction': self.id_transaction,
+            'id_parking': self.id_parking,
             'id_vehicle': self.id_vehicle,
             'id_place': self.id_place,
             'time_in': self.time_in,

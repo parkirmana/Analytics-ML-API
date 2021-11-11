@@ -229,5 +229,39 @@ def get_image():
     else:
         return render_template('index.html')
 
+@app.route('/predict', methods=['POST'])
+def get_prediction():
+    if request.method == 'POST':
+        # Unpack request
+        image = request.files["images"]
+        IMAGE_REQUEST = image.filename
+        image.save(os.path.join(os.getcwd(), 'detections', IMAGE_REQUEST))
+        IMAGE_PATH = os.path.join(os.getcwd(), 'detections', IMAGE_REQUEST)
+
+        # Detect license plate object
+        img = cv2.imread(IMAGE_PATH)
+        try:
+            IMAGE_CROPPED = obj_detection.detect(img)
+
+            # Detect digit license plate
+            image_np = np.array(IMAGE_CROPPED)
+
+            input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
+            detections = digits_detection.detect(input_tensor)
+            digit_plate = digits_detection.get_digits_lpr(detections)
+
+            data = {
+                'response': 'plate number detected',
+                'plate_number': digit_plate
+            }
+
+            return jsonify(data), 200
+        except:
+            data = {
+                'response': 'can not detect plate number'
+            }
+            return jsonify(data), 500
+        
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -47,7 +47,7 @@ tfod_cfg_path = "workspace/models/efficientdet_d1_coco17/pipeline.config"
 tfod_ckpt_path = "workspace/models/efficientdet_d1_coco17/ckpt-6"
 digits_detection = tfod_model(tfod_labels_path, tfod_cfg_path, tfod_ckpt_path)
 
-# API that returns image with detections on it
+# API that returns complete detection and update/insert database response
 @app.route('/image', methods=['POST', 'GET'])
 def get_image():
     if request.method == 'POST':
@@ -221,6 +221,40 @@ def get_image():
 
     else:
         return render_template('index.html')
+
+# API that returns predicted digit plate number only
+@app.route('/predict', methods=['POST'])
+def get_prediction():
+    if request.method == 'POST':
+        # Unpack request
+        image = request.files["images"]
+        IMAGE_REQUEST = image.filename
+        image.save(os.path.join(os.getcwd(), 'detections', IMAGE_REQUEST))
+        IMAGE_PATH = os.path.join(os.getcwd(), 'detections', IMAGE_REQUEST)
+
+        # Detect license plate object
+        img = cv2.imread(IMAGE_PATH)
+        try:
+            IMAGE_CROPPED = obj_detection.detect(img)
+
+            # Detect digit license plate
+            image_np = np.array(IMAGE_CROPPED)
+
+            input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
+            detections = digits_detection.detect(input_tensor)
+            digit_plate = digits_detection.get_digits_lpr(detections)
+
+            data = {
+                'response': 'plate number detected',
+                'plate_number': digit_plate
+            }
+
+            return jsonify(data), 200
+        except:
+            data = {
+                'response': 'failed detect plate number'
+            }
+            return jsonify(data), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

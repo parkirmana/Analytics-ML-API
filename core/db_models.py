@@ -1,20 +1,23 @@
 from app import db
 
 class Vehicle(db.Model):
-    __tablename__ = 'user_vehicles'
+    __tablename__ = 'vehicles'
 
-    id_user = db.Column(db.Integer, primary_key=True)
-    id_vehicle = db.Column(db.Integer)
-    plat_number = db.Column(db.String(10))
+    id_vehicle = db.Column(db.Integer, primary_key=True)
+    id_user = db.Column(db.Integer)
+    plate_number = db.Column(db.String(10))
     vehicle_type = db.Column(db.String(8))
     last_parking = db.Column(db.DateTime(timezone=True))
+    vehicle_brand = db.Column(db.String(10))
+    vehicle_name = db.Column(db.String(32))
 
-    def __init__(self, id_vehicle, id_user, plat_number, vehicle_type, last_parking):
-        self.id_vehicle = id_vehicle
+    def __init__(self, id_user, plate_number, vehicle_type, last_parking, vehicle_brand, vehicle_name):
         self.id_user = id_user
-        self.plat_number = plat_number
+        self.plate_number = plate_number
         self.vehicle_type = vehicle_type
         self.last_parking = last_parking
+        self.vehicle_brand = vehicle_brand
+        self.vehicle_name = vehicle_name
 
     def __repr__(self) -> str:
         return '<Vehicle -- id_user: {} id_vehicle: {}>'.format(self.id_user, self.id_vehicle)
@@ -24,8 +27,10 @@ class Vehicle(db.Model):
             'id_vehicle': self.id_vehicle,
             'id_user': self.id_user,
             'plate_number': self.plate_number,
-            'car_type': self.car_type,
-            'img_stnk': self.img_stnk,
+            'vehicle_type': self.vehicle_type,
+            'last_parking': self.last_parking,
+            'vehicle_brand': self.vehicle_brand,
+            'vehicle_name': self.vehicle_name
         }
 
 class Booking(db.Model):
@@ -50,16 +55,16 @@ class Booking(db.Model):
 
     def serialize(self):
         return {
-            'id_user': self.id_user,
             'id_booking': self.id_booking,
+            'id_user': self.id_user,
             'id_vehicle': self.id_vehicle,
             'id_place': self.id_place,
             'time_booking': self.time_booking,
             'status': self.status
         }
 
-class Place(db.Model):
-    __tablename__ = 'places'
+class Universities(db.Model):
+    __tablename__ = 'universities'
 
     id_place = db.Column(db.Integer, primary_key=True)
     id_company = db.Column(db.Integer)
@@ -70,8 +75,17 @@ class Place(db.Model):
     motor_capacity = db.Column(db.Integer)
     car_capacity = db.Column(db.Integer)
 
+    def __init__(self, id_company, name, address, longitude, latitude, motor_capacity, car_capacity):
+        self.id_company = id_company
+        self.name = name
+        self.address = address
+        self.longitude = longitude
+        self.latitude = latitude
+        self.motor_capacity = motor_capacity
+        self.car_capacity = car_capacity
+
     def __repr__(self) -> str:
-        return '<Place -- id_place: {} id_company: {} name: {}>'.format(self.id_place, self.id_company, self.name)
+        return '<Universities -- id_place: {} id_company: {} name: {}>'.format(self.id_place, self.id_company, self.name)
 
     def serialize(self):
         return {
@@ -86,10 +100,10 @@ class Place(db.Model):
         }
 
 class Transaction(db.Model):
-    __tablename__ = 'uni_parking_transactions'
+    __tablename__ = 'parking_transactions'
 
-    id_user = db.Column(db.Integer)
     id_parking = db.Column(db.Integer, primary_key=True)
+    id_user = db.Column(db.Integer)
     id_vehicle = db.Column(db.Integer)
     id_place = db.Column(db.Integer)
     time_in = db.Column(db.DateTime(timezone=True))
@@ -108,8 +122,8 @@ class Transaction(db.Model):
 
     def serialize(self):
         return {
-            'id_user': self.id_user,
             'id_parking': self.id_parking,
+            'id_user': self.id_user,
             'id_vehicle': self.id_vehicle,
             'id_place': self.id_place,
             'time_in': self.time_in,
@@ -125,17 +139,18 @@ class User(db.Model):
     phone_number = db.Column(db.String(12))
     email = db.Column(db.String(64))
     password = db.Column(db.String(64))
-    verification_pin = db.Column(db.String(64))
+    activated = db.Column(db.Boolean())
+    last_login = db.Column(db.DateTime(timezone=True))
     device_token = db.Column(db.String(180))
 
 
-    def __init__(self, id_user, full_name, phone_number, email, password, verification_pin, device_token):
-        self.id_user = id_user
+    def __init__(self, full_name, phone_number, email, password, activated, last_login, device_token):
         self.full_name = full_name
         self.phone_number = phone_number
         self.email = email
         self.password = password
-        self.verification_pin = verification_pin
+        self.activated = activated
+        self.last_login = last_login
         self.device_token = device_token
 
     def __repr__(self) -> str:
@@ -148,6 +163,7 @@ class User(db.Model):
             'phone_number': self.phone_number,
             'email': self.email,
             'password': self.password,
-            'verification_pin': self.verification_pin,
+            'activated': self.activated,
+            'last_login': self.last_login,
             'device_token': self.device_token
         }

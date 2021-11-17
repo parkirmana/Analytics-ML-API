@@ -71,7 +71,7 @@ def get_image():
         # digit_plate = 'AE1941E'
 
         # Filter query to database
-        vehicle = db.session.query(Vehicle).filter_by(plat_number=digit_plate).scalar()
+        vehicle = db.session.query(Vehicle).filter_by(plate_number=digit_plate).scalar()
 
         # Check is there user with plate number = digit_plate
         if (vehicle is not None):
@@ -82,7 +82,7 @@ def get_image():
                 booking.status = 'DONE'
                 db.session.commit()
 
-            parking_place = db.session.query(Place).filter_by(name=place).scalar()
+            parking_place = db.session.query(Universities).filter_by(name=place).scalar()
             transaction = db.session.query(Transaction).filter_by(id_user=vehicle.id_user, id_vehicle=vehicle.id_vehicle, id_place=parking_place.id_place, is_done=False).scalar()
             
             # Check whether IN or OUT

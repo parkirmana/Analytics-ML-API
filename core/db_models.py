@@ -100,7 +100,7 @@ class Universities(db.Model):
         }
 
 class Transaction(db.Model):
-    __tablename__ = 'parking_transactions'
+    __tablename__ = 'parkings_transactions'
 
     id_parking = db.Column(db.Integer, primary_key=True)
     id_user = db.Column(db.Integer)

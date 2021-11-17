@@ -99,16 +99,13 @@ def get_image():
                     time_in = transaction.time_in
                     time_out = transaction.time_out
                     time_diff = (time_out - time_in).total_seconds()
-                    print(time_diff)
 
                     hours = floor(time_diff/3600)
                     minutes = floor((time_diff%3600)/60)
                     seconds = floor(time_diff%60)
-                    print(hours, minutes, seconds)
 
                     # Query select device_token
                     device_token = db.session.query(User.device_token).filter_by(id_user=vehicle.id_user).scalar()
-                    print(device_token)
 
                     # Notification data to android
                     notif_data = json.dumps({
@@ -127,7 +124,6 @@ def get_image():
                         "click_action": "com.dicoding.nextparking.ui.payment.PaymentActivity"
                         }
                     })
-                    print(notif_data)
 
                     # Response data
                     data = {
@@ -139,7 +135,6 @@ def get_image():
                         "time_in": str(time_in),
                         "time_out": str(time_out),
                     }
-                    print(data)
 
                     send_notification(notif_data)
 
@@ -190,7 +185,6 @@ def get_image():
                         "click_action": "com.dicoding.nextparking.HomeActivity"
                         }
                     })
-                    print(notif_data)
 
                     # Response data
                     data = {
@@ -202,7 +196,6 @@ def get_image():
                         "time_in": str(time_in),
                         "time_out": str(new_transaction.time_out),
                     }
-                    print(data)
 
                     send_notification(notif_data)
 

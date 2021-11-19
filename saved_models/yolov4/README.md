@@ -1,1 +1,0 @@
-Put the yolov4 model (config and weight) inside this folder

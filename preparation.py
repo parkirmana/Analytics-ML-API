@@ -36,8 +36,8 @@ if __name__ == '__main__':
         os.system('git clone https://github.com/tensorflow/models {}'.format(paths['APIMODEL_PATH']))
     
     if os.name=='posix':  
-        os.system('apt-get install protobuf-compiler')
-        os.system('cd saved_models/tfod/models/research && protoc object_detection/protos/*.proto --python_out=. && cp object_detection/packages/tf2/setup.py . && python -m pip install .')
+        os.system('pip install -r ~/Analytics-ML-API/requirements.txt')
+        os.system('cd saved_models/tfod/models/research && protoc object_detection/protos/*.proto --python_out=. && cp object_detection/packages/tf2/setup.py . && python3 -m pip install .')
 
     if os.name=='nt':
         url="https://github.com/protocolbuffers/protobuf/releases/download/v3.15.6/protoc-3.15.6-win64.zip"

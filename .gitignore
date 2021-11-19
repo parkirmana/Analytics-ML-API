@@ -130,3 +130,6 @@ dmypy.json
 
 # db_config.py
 /core/db_config.py
+
+# saved_models
+/saved_models

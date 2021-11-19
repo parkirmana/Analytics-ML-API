@@ -133,3 +133,6 @@ dmypy.json
 
 # saved_models
 /saved_models
+
+# detections
+/detections

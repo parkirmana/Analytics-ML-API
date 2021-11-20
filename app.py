@@ -70,17 +70,13 @@ def get_image():
         detections = digits_detection.detect(input_tensor)
         with open("detection.txt", "w", encoding="utf-8") as f:
             t = datetime.datetime.now()
-            tz = datetime.timezone(datetime.timedelta(hours=7))
-            t_string = t.astimezone(tz)
-            f.write(t_string + " ")
+            f.write(t + " ")
             f.write(detections + "\n")
         digit_plate = digits_detection.get_digits_lpr(detections)
         print('digit detected: {}'.format(digit_plate))
         with open("detection.txt", "a", encoding="utf-8") as f:
             x = datetime.datetime.now()
-            tz = datetime.timezone(datetime.timedelta(hours=7))
-            x_string = x.astimezone(tz)
-            f.write(x_string + " ")
+            f.write(x + " ")
             f.write(digit_plate)
         # digit_plate = 'AE1941E'
 

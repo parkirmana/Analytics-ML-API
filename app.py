@@ -70,6 +70,8 @@ def get_image():
         detections = digits_detection.detect(input_tensor)
         digit_plate = digits_detection.get_digits_lpr(detections)
         print('digit detected: {}'.format(digit_plate))
+        with open("detection.txt", "w", encoding="utf-8") as f:
+            f.write(digit_plate)
         # digit_plate = 'AE1941E'
 
         # Filter query to database

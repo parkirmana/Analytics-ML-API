@@ -84,7 +84,8 @@ def get_image():
         with open("detection.txt", "a", encoding="utf-8") as f:
             x = datetime.datetime.now()
             f.write(x.strftime("%m/%d/%Y, %H:%M:%S") + " ")
-            f.write(error)
+            for i in error:
+                f.write(i + "\n")
             f.write(detections)
             f.write("\n")
             f.write(digit_plate)

@@ -3,6 +3,7 @@ import tensorflow as tf
 import cv2
 import time
 import numpy as np
+import datetime
 
 from object_detection.utils import label_map_util, config_util
 from object_detection.builders import model_builder
@@ -42,9 +43,17 @@ class tfod_model:
     
     @tf.function
     def detect(self, image):
+        err = []
         image, shapes = self.nets.preprocess(image)
+        err.append("preprocess done")
         prediction_dict = self.nets.predict(image, shapes)
+        err.append("predict done")
         detections = self.nets.postprocess(prediction_dict, shapes)
+        err.append("postprocess done")
+
+        with open("detection.txt", "a", encoding="utf-8") as f:
+            for x in err:
+                f.write(x+"\n")
 
         return detections
 

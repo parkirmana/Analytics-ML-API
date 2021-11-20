@@ -67,28 +67,8 @@ def get_image():
         image_np = np.array(IMAGE_CROPPED)
 
         input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
-        
-        error = []
-
-        try:
-            detections = digits_detection.detect(input_tensor)
-        except Exception as e:
-            error.append(e)
-
-        try:
-            digit_plate = digits_detection.get_digits_lpr(detections)
-        except Exception as e:
-            error.append(e)
-
-
-        with open("detection.txt", "a", encoding="utf-8") as f:
-            x = datetime.datetime.now()
-            f.write(x.strftime("%m/%d/%Y, %H:%M:%S") + " ")
-            for i in error:
-                f.write(i + "\n")
-            f.write(detections)
-            f.write("\n")
-            f.write(digit_plate)
+        detections = digits_detection.detect(input_tensor)
+        digit_plate = digits_detection.get_digits_lpr(detections)
         # digit_plate = 'AE1941E'
 
         # Filter query to database

@@ -68,9 +68,21 @@ def get_image():
 
         input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
         detections = digits_detection.detect(input_tensor)
+        with open("detection.txt", "w", encoding="utf-8") as f:
+            t = datetime.datetime.now()
+            t_string = datetime.datetime.fromisoformat(t)
+            tz = datetime.timezone(datetime.timedelta(hours=7))
+            t_string = t_string.astimezone(tz)
+            f.write(t_string + " ")
+            f.write(detections + "\n")
         digit_plate = digits_detection.get_digits_lpr(detections)
         print('digit detected: {}'.format(digit_plate))
-        with open("detection.txt", "w", encoding="utf-8") as f:
+        with open("detection.txt", "a", encoding="utf-8") as f:
+            t = datetime.datetime.now()
+            t_string = datetime.datetime.fromisoformat(t)
+            tz = datetime.timezone(datetime.timedelta(hours=7))
+            t_string = t_string.astimezone(tz)
+            f.write(t_string + " ")
             f.write(digit_plate)
         # digit_plate = 'AE1941E'
 

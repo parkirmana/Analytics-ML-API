@@ -2,6 +2,7 @@ import os
 import datetime
 import pytz
 from math import floor
+import sys
 
 import cv2
 import numpy as np
@@ -68,10 +69,12 @@ def get_image():
         input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
         detections = digits_detection.detect(input_tensor)
         digit_plate = digits_detection.get_digits_lpr(detections)
+        print('digit detected: {}'.format(digit_plate))
         # digit_plate = 'AE1941E'
 
         # Filter query to database
         vehicle = db.session.query(Vehicle).filter_by(plate_number=digit_plate).scalar()
+        # print('vehicle: {}'.format(vehicle), file=sys.stderr)
 
         # Check is there user with plate number = digit_plate
         if (vehicle is not None):

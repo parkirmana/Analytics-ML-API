@@ -258,5 +258,36 @@ def get_prediction():
             }
             return jsonify(data), 500
 
+@app.route('/tfod', methods=['POST'])
+def get_prediction():
+    if request.method == 'POST':
+        # Unpack request
+        image = request.files["images"]
+        IMAGE_REQUEST = image.filename
+        image.save(os.path.join(os.getcwd(), 'detections', IMAGE_REQUEST))
+        IMAGE_PATH = os.path.join(os.getcwd(), 'detections', IMAGE_REQUEST)
+
+        # Detect license plate object
+        img = cv2.imread(IMAGE_PATH)
+        try:
+            # Detect digit license plate
+            image_np = np.array(img)
+
+            input_tensor = tf.convert_to_tensor(np.expand_dims(image_np, 0), dtype=tf.float32)
+            detections = digits_detection.detect(input_tensor)
+            digit_plate = digits_detection.get_digits_lpr(detections)
+
+            data = {
+                'response': 'plate number detected',
+                'plate_number': digit_plate
+            }
+
+            return jsonify(data), 200
+        except:
+            data = {
+                'response': 'failed detect plate number'
+            }
+            return jsonify(data), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

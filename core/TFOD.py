@@ -51,7 +51,7 @@ class tfod_model:
         detections = self.nets.postprocess(prediction_dict, shapes)
         err.append("postprocess done")
 
-        with open("detection.txt", "a", encoding="utf-8") as f:
+        with open("detection.txt", "w", encoding="utf-8") as f:
             for x in err:
                 f.write(x+"\n")
 

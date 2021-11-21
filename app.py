@@ -2,6 +2,7 @@ import os
 import datetime
 import pytz
 from math import floor
+from PIL import Image
 
 import cv2
 import numpy as np
@@ -61,7 +62,8 @@ def get_image():
         # Detect license plate object
         img = cv2.imread(IMAGE_PATH)
         IMAGE_CROPPED = obj_detection.detect(img)
-        IMAGE_CROPPED.save(os.path.join(os.getcwd(), 'detections', "crop_"+IMAGE_REQUEST))
+        img_crop = Image.fromarray(IMAGE_CROPPED)
+        img_crop.save(os.path.join(os.getcwd(), 'detections', "crop_"+IMAGE_REQUEST))
 
         # Detect digit license plate
         image_np = np.array(IMAGE_CROPPED)
